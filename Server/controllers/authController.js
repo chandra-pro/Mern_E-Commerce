@@ -32,6 +32,31 @@ exports.registerController=async (req, res) => {
     return res.status(500).json(error);
   }
 }
+exports.authlogin=async()=>{
+  const { email, password } = req.body;
+
+  if (email === "" || password === "") {
+    return res.status(500).json({ msg: "All fields must be filled" });
+  }
+
+  try {
+    const user = await Users.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ msg: "Invalid credentials" });
+    }
+    const comparePass = await bcrypt.compare(req.body.password, user.password);
+    if (!comparePass) {
+      return res.status(404).json({ msg: "Invalid credentials" });
+    }
+
+    const {password, ...List} = user._doc
+    const token = createToken(user);
+
+    return res.status(200).json({ List, token });
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+};
 const createToken = (user) => {
   const payload = {
     id: user._id.toString(),
